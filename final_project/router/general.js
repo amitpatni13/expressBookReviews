@@ -1,4 +1,6 @@
 const express = require('express');
+const axios = require('axios');
+const path = require('path');
 let books = require("./booksdb.js");
 let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
@@ -20,7 +22,7 @@ public_users.post("/register", (req,res) => {
 
 function getBooks() {
     return new Promise((resolve, reject) => {
-        if (books?.length) {
+        if (books) {
             resolve(books);
         } else {
             reject({ message: 'Error fetching books' });
@@ -37,7 +39,7 @@ public_users.get('/',function (req, res) {
 
 function getBookByISBN(isbn) {
     return new Promise((resolve, reject) => {
-        if (books?.length) {
+        if (books) {
             const book = books[isbn];
             if (book) {
                 resolve(book);
@@ -61,7 +63,7 @@ public_users.get('/isbn/:isbn',function (req, res) {
 
 function getBooksByAuthor(author) {
     return new Promise((resolve, reject) => {
-        if (books?.length) {
+        if (books) {
             const keys = Object.keys(books);
             let bookList = [];
             for (let isbn of keys) {
@@ -90,7 +92,7 @@ public_users.get('/author/:author',function (req, res) {
 
 function getBookByTitle(title) {
     return new Promise((resolve, reject) => {
-        if (books?.length) {
+        if (books) {
             const keys = Object.keys(books);
             let book = {};
             for (let isbn of keys) {
@@ -121,8 +123,16 @@ public_users.get('/title/:title',function (req, res) {
 //  Get book review
 public_users.get('/review/:isbn',function (req, res) {
     const isbn = req.params.isbn;
-    const book = books[isbn] || {};
-    return res.status(200).json(book?.reviews || {});
+    if (books[isbn]) {
+        const book = books[isbn];
+        if (book?.reviews) {
+            return res.status(200).json(book.reviews);
+        } else {
+            return res.status(404).json({ message: 'No Books present with isbn ' + isbn })
+        }
+    } else {
+        return res.status(404).json({ message: 'Error fetching books' });
+    }
 });
 
 module.exports.general = public_users;
